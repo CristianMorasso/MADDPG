@@ -1,3 +1,4 @@
 nets/
 out_csv/
 __pycache__/
+file_out.txt
