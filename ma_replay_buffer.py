@@ -78,6 +78,7 @@ class MultiAgenReplayBuffer:
 
         return state, new_state, reward, terminal, actor_state, actor_new_state, actor_action,actor_state_t0
     
+    #for par sharing
     def sample_last_batch(self):
         max_memory = min(self.pointer, self.buffer_size)
         batch = self.batch_size

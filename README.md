@@ -10,3 +10,4 @@ See *argParser.py* to all parameters.
 
 The code work but need to be cleaned up.\
 `par_sharing` with dial not available, pls do not use that parameter.
+`LSTM` not tested yet.

@@ -2,7 +2,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#import wandb
 
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim, name,lr=0.001, hidden_dim=256, chkpt_dir='tmp',out_act_string="", net_type="MLP"):
@@ -14,6 +13,7 @@ class Actor(nn.Module):
             self.fc2 = nn.Linear(hidden_dim, hidden_dim)
             self.fc3 = nn.Linear(hidden_dim, action_dim)
         elif net_type == "LSTM":
+            # Not tested
             self.lstm = nn.LSTM(state_dim, state_dim, batch_first=True)
             self.fc = nn.Linear(state_dim, action_dim)
 
@@ -32,7 +32,6 @@ class Actor(nn.Module):
 
 
     def forward(self, state):
-        # x = x.view(1, -1)
         if self.net_type == "MLP":
             x = F.relu(self.fc1(state))
             x = F.relu(self.fc2(x))
@@ -44,11 +43,10 @@ class Actor(nn.Module):
             x = self.fc(x.view(x.shape[0],-1))
         
         x = self.out_act_func(x)
-        #x = torch.sigmoid(x) #torch.softmax(x, dim=-1)#torch.tanh(x)
         return x
     
     def save_checkpoint(self, text=""):
-        #print('... saving checkpoint ...')
+        print('... saving checkpoint ...')
         #torch.save(self.state_dict(), self.chkpt_dir+'/'+self.name+'.pth')
         torch.save(self.state_dict(), self.chkpt_dir+'/'+self.name+f'{text}.pth')
 
@@ -78,7 +76,7 @@ class Critic(nn.Module):
         return x
     
     def save_checkpoint(self, text):
-        #print('... saving checkpoint ...')
+        print('... saving checkpoint ...')
         torch.save(self.state_dict(), self.chkpt_dir+'/'+self.name+f'{text}.pth')
 
     def load_checkpoint(self):
@@ -94,8 +92,8 @@ class Agent:
         self.name = "agent_"+str(agent_idx)
         torch.manual_seed(seed)
         torch.backends.cudnn.deterministic = True
-        # sl_env_out = args.out_act_ls if agent_idx else args.out_act_sp
-        out_act_string =  args.out_act#sl_env_out if args.env_id == "simple_speaker_listener_v4" else args.out_act
+       
+        out_act_string =  args.out_act
         self.actor = [Actor(actor_dims, n_actions, self.name+'_actor_policy'+str(i), chkpt_dir=chkpt_dir,lr=args.learning_rate, hidden_dim=args.actor_hidden, out_act_string = out_act_string, net_type=args.net_type) for i in range(args.sub_policy)]
         self.critic = [Critic(critic_dims, n_actions, n_agents=n_agents, name=self.name+'_critic'+str(i), chkpt_dir=chkpt_dir,lr=args.learning_rate,hidden_dim=args.critic_hidden) for i in range(args.sub_policy)]
 
@@ -125,9 +123,8 @@ class Agent:
         state = torch.tensor(state, dtype=torch.float32, device=self.actor[idx].device)
         action = self.actor[idx](state).cpu().data.numpy()
         noise = self.noise_func(ep, max_ep)
-        if WANDB:
-            wandb.log({"noise": noise, 'ep_noise': ep})
-        # print(noise)
+        # if WANDB:
+        #     wandb.log({"noise": noise, 'ep_noise': ep})
         if not eval:
             action += np.random.normal(0, noise, size=self.n_actions)
         return action.clip(0,1)
